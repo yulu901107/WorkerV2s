@@ -340,9 +340,9 @@ export default {
 			}
 			
 			path = dyn_conf('path', env.PATH) || "/?ed=2560";
-			sni = dyn.conf('sni', env.SNI) || host;
+			sni = dyn_conf('sni', env.SNI) || host;
 			edgetunnel = env.ED || edgetunnel;
-			RproxyIP = dyn.conf('proxyip', env.RPROXYIP) || RproxyIP;
+			RproxyIP = dyn_conf('proxyip', env.RPROXYIP) || RproxyIP;
 
 			if (host == "null" || uuid == "null" ){
 				let 空字段;
