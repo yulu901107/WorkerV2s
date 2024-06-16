@@ -242,6 +242,19 @@ let socks5Data;
 export default {
 	async fetch (request, env) {
 		if (env.TOKEN) mytoken = await ADD(env.TOKEN);
+
+        // dynamic config applies to: host, uuid, path, sni, proxyip
+        const allow_dynamic_conf = env.DYNAMIC_CONF || false;
+        
+		const url = new URL(request.url);
+        
+        function dyn_conf(param_id, env_value) {
+            // if allowed, param from url is higher priority
+            const param = url.searchParams.get(param_id);
+            if (allow_dynamic_conf && param != null) return param;
+            return env_value;
+        }
+        
 		//mytoken = env.TOKEN.split(',') || mytoken;
 		BotToken = env.TGTOKEN || BotToken;
 		ChatID = env.TGID || ChatID; 
@@ -254,7 +267,6 @@ export default {
 		EndPS = env.PS || EndPS;
 		const userAgentHeader = request.headers.get('User-Agent');
 		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
-		const url = new URL(request.url);
 		const format = url.searchParams.get('format') ? url.searchParams.get('format').toLowerCase() : "null";
 		let host = "";
 		let uuid = "";
@@ -313,23 +325,24 @@ export default {
 
 		if (mytoken.length > 0 && mytoken.some(token => url.pathname.includes(token))) {
 			host = "null";
-			if (env.HOST) {
-				const hosts = await ADD(env.HOST);
+            const host_set = dyn_conf('host', env.HOST);
+			if (host_set) {
+				const hosts = await ADD(host_set);
 				host = hosts[Math.floor(Math.random() * hosts.length)];
 			}
 			
 			if (env.PASSWORD){
 				协议类型 = 'Trojan';
-				uuid = env.PASSWORD
+				uuid = dyn_conf('password', env.PASSWORD);
 			} else {
 				协议类型 = 'VLESS';
-				uuid = env.UUID || "null";
+				uuid = dyn_conf('uuid', env.UUID) || "null";
 			}
 			
-			path = env.PATH || "/?ed=2560";
-			sni = env.SNI || host;
+			path = dyn_conf('path', env.PATH) || "/?ed=2560";
+			sni = dyn.conf('sni', env.SNI) || host;
 			edgetunnel = env.ED || edgetunnel;
-			RproxyIP = env.RPROXYIP || RproxyIP;
+			RproxyIP = dyn.conf('proxyip', env.RPROXYIP) || RproxyIP;
 
 			if (host == "null" || uuid == "null" ){
 				let 空字段;
@@ -356,7 +369,7 @@ export default {
 					// 错误处理
 				}	
 			}
-		await sendMessage("#VLESS订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+            await sendMessage("#VLESS订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 		} else {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid') || url.searchParams.get('password') || url.searchParams.get('pw');
